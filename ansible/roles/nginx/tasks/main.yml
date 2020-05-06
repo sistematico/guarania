@@ -1,0 +1,35 @@
+---
+- shell: php -v | awk 'NR<=1{ print substr($2,1,3) }'
+  register: php_version
+
+- name: install nginx
+  package:
+    name: nginx
+    state: present
+
+- include: debian.yml
+  when: ansible_distribution == "Debian"
+- include: archlinux.yml
+  when: ansible_distribution == "Arch Linux"
+
+- name: create web-root directory
+  file:
+    path: /var/www/{{ domain_name }}
+    owner: "{{ webserver_user }}"
+    group: "{{ webserver_user }}"
+    mode: 0755
+    state: directory
+
+- name: clonning agressive to /var/www/{{ domain_name }}
+  git:
+    repo: 'https://gitlab.com/sistematico/agressive.git'
+    dest: "/var/www/{{ domain_name }}"
+  notify:
+    - restart nginx
+
+- name: change owner (and group) of web-root directory
+  file:
+    path: "/var/www/{{ domain_name }}"
+    owner: "{{ webserver_user | default('www-data') }}"
+    group: "{{ webserver_user | default('www-data') }}"
+    recurse: true

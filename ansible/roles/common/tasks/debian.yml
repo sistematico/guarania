@@ -1,0 +1,40 @@
+---
+- name: copy sources.list to /etc/apt
+  copy:
+    src: sources.list
+    dest: /etc/apt/
+    backup: yes
+
+- name: update repository and upgrade packages
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: install locales
+  package:
+    name: locales
+    state: present
+
+- name: select default locale
+  debconf:
+    name: locales
+    question: locales/default_environment_locale
+    value: pt_BR.UTF-8
+    vtype: select
+  notify:
+    - rebuild locales database
+
+- name: /etc/locale.gen
+  lineinfile:
+    dest: /etc/locale.gen
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: "{{ item.state }}"
+  with_items:
+    - { regexp: '^#? ?pt_BR ISO-8859-1', line: 'pt_BR ISO-8859-1', state: present }
+    - { regexp: '^#? ?pt_BR.UTF-8 UTF-8', line: 'pt_BR.UTF-8 UTF-8', state: present }
+    - { regexp: '^#? ?en_US ISO-8859-1', line: 'en_US ISO-8859-1', state: present }
+    - { regexp: '^#? ?en_US.ISO-8859-15 ISO-8859-15', line: 'en_US.ISO-8859-15 ISO-8859-15', state: present }
+    - { regexp: '^#? ?en_US.UTF-8 UTF-8', line: 'en_US.UTF-8 UTF-8', state: present }
+  notify:
+    - rebuild locales database

@@ -1,0 +1,115 @@
+---
+- name: create group
+  group:
+    name: "{{shoutcast_user}}"
+    state: present
+
+- name: create user
+  user:
+    name: "{{shoutcast_user}}"
+    shell: /bin/bash
+    group: "{{shoutcast_user}}"
+
+- name: change home permissions
+  file:
+    path: /home/{{shoutcast_user}}
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    mode: 0701
+
+- name: create shoutcast and transcoder dirs
+  file:
+    path: "/home/{{shoutcast_user}}/{{item}}"
+    owner: "{{ shoutcast_user }}"
+    group: "{{ shoutcast_user }}"
+    mode: 0755
+    recurse: yes
+    state: directory
+  with_items: ["shoutcast", "transcoder", "transcoder/playlists"]
+
+- name: change subfolders permissions
+  file:
+    path: /home/{{shoutcast_user}}/{{item}}
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    mode: 0755    
+  with_items: ["shoutcast", "transcoder", "transcoder/playlists"]
+
+- name: extract sc_serv2_linux_x64-latest.tar.gz into /home/{{shoutcast_user}}/shoutcast/
+  unarchive:
+    src: sc_serv2_linux_x64-latest.tar.gz
+    dest: /home/{{shoutcast_user}}/shoutcast/
+
+- name: extract sc_trans_linux_x64_10_07_2011.tar.gz into /home/{{shoutcast_user}}/transcoder/
+  unarchive:
+    src: sc_trans_linux_x64_10_07_2011.tar.gz
+    dest: /home/{{shoutcast_user}}/transcoder/
+
+- name: shoutcast files
+  template:
+    src: sc_serv.conf.j2
+    dest: /home/{{shoutcast_user}}/shoutcast/sc_serv.conf
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    mode: 0644
+    backup: yes
+ 
+- name: sc_trans files
+  template:
+    src: "{{item}}"
+    dest: /home/{{shoutcast_user}}/transcoder/
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    mode: 0644
+    backup: yes
+  with_items: ["templates/sc_trans_basic.conf", "templates/sc_trans.conf"]
+
+- name: sc_trans playlist
+  template:
+    src: templates/main.lst.j2
+    dest: /home/{{shoutcast_user}}/transcoder/playlists/main.lst
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    mode: 0644
+    backup: yes
+
+- name: change owner and group for shoutcast dirs
+  file:
+    path: /home/{{shoutcast_user}}
+    owner: "{{shoutcast_user}}"
+    group: "{{shoutcast_user}}"
+    recurse: yes
+
+- name: shoutcast init script
+  template:
+    src: shoutcast.sh.j2
+    dest: /usr/local/bin/shoutcast.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: shoutcast systemd unit
+  template:
+    src: shoutcast.service.j2
+    dest: /etc/systemd/system/shoutcast.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: create audio path
+  file:
+    path: "/usr/local/musicas"
+    owner: "{{ shoutcast_user }}"
+    group: "{{ shoutcast_user }}"
+    mode: 0755
+    recurse: yes
+    state: directory
+
+- name: download audio examples
+  get_url:
+    url: https://www.soundhelix.com/examples/mp3/{{item}}
+    dest: /usr/local/musicas
+    mode: 0644
+  with_items: ["SoundHelix-Song-1.mp3", "SoundHelix-Song-2.mp3", "SoundHelix-Song-3.mp3","SoundHelix-Song-4.mp3","SoundHelix-Song-5.mp3"]
+  notify:
+    - restart shoutcast

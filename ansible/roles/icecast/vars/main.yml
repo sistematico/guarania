@@ -1,0 +1,13 @@
+---
+shoutcast_user: radio
+title: Awesome Radio
+url: http://webradio.com
+site: atlas.radiochat.com.br
+shoutcast_port: 8000
+password: 123456
+adminuser: admin
+adminpassword: 987654321
+genre: Country
+dj: DJ
+djpass: megadj
+hash: 

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atlas.RadioChat.com.br</title>
+    <link rel="icon" href="img/favicon.png">
+    <style type="text/css">
+        body, html {height: 100%; margin: 0; padding: 0}
+        body {
+            /* #2E3440 #3B4252 #434C5E #4C566A
+            #D8DEE9 #E5E9F0 #ECEFF4 #FFFFFF
+            #8FBCBB #88C0D0 #FFFFFF #5E81AC
+            #BF616A #D08770 #EBCB8B #A3BE8C #B48EAD */
+            background: #2E3440; 
+            color: #ECEFF4; 
+            font-size: 20px;
+            text-shadow: black 0.2em 0.2em 0.2em
+        }
+        a:link, a:visited {
+            color: inherit; 
+            text-decoration: underline
+        }
+        a:hover {
+            text-shadow: white 0 0 0.2em
+        }
+        div.container {top: 0; left: 0; width: 100%; height: 100%; position: absolute; display: table}
+        p {display: table-cell; vertical-align: middle}
+
+        img.displayed {display: block; margin: 1em auto; max-height: 400px;}
+
+        p {text-align: center} 
+    </style>
+</head>
+<body>
+    <div class=container>
+        <p>Atlas <img alt="Atlas" class=displayed src="https://upload.wikimedia.org/wikipedia/commons/2/29/Atlas_Schloss_Linderhof.JPG"><br />
+
+            <?php
+
+                // OS
+                if (false == function_exists("exec") || false == is_readable("/etc/os-release")) {
+      
+                    $os         = exec('cat /etc/os-release');
+                    $listIds    = preg_match_all('/.*=/', $os, $matchListIds);
+                    $listIds    = $matchListIds[0];
+
+                    $listVal    = preg_match_all('/=.*/', $os, $matchListVal);
+                    $listVal    = $matchListVal[0];
+
+                    array_walk($listIds, function(&$v, $k){
+                        $v = strtolower(str_replace('=', '', $v));
+                    });
+
+                    array_walk($listVal, function(&$v, $k){
+                        $v = preg_replace('/=|"/', '', $v);
+                    });
+
+                    $os = array_combine($listIds, $listVal);
+                
+                } else {
+                    $os = false;
+                }    
+
+                // Location
+                $ip = getHostByName(php_uname('n'));
+                $geo = unserialize(file_get_contents("http://www.geoplugin.net/php.gp?ip=$ip"));
+                $pais = $geo["geoplugin_countryName"];
+                $estado = $geo["geoplugin_regionCode"];
+                $cidade = $geo["geoplugin_city"];
+
+            ?>
+            Hospedado em: <?=$pais?>, <?=$estado?>, <?=$cidade?><br />
+            <?php if ($os !== false): ?>
+            Sistema Operacional: <?=$os['name']?>, <?=$os['version']?>
+            <?php endif; ?>
+            </p>
+    </div>
+</body>
+</html>

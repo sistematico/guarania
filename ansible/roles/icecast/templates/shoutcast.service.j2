@@ -1,0 +1,17 @@
+[Unit]
+Description=Shoutcast Server
+#After=syslog.target
+After=network.target
+
+[Service]
+Type=forking
+User={{ shoutcast_user }}
+Group={{ shoutcast_user }}
+ExecStart=/usr/local/bin/shoutcast.sh start
+ExecStop=/usr/local/bin/shoutcast.sh stop
+
+# Give a reasonable amount of time for the server to start up/shut down
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

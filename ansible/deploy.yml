@@ -1,0 +1,10 @@
+---
+- hosts: guarania
+  user: root
+  vars:
+    domain_name: guarania.radiochat.com.br
+    webserver_user: www-data
+  roles:
+    - common
+    - nginx
+    - php

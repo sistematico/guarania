@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
+#
+# Criado em: 05/02/2017 15:10:02
+# Alterado em: 07/05/2019 15:10:00
+
+USER="{{ shoutcast_user }}"
+SC_SERV="/home/{{ shoutcast_user }}/shoutcast"
+SC_TRANS="/home/{{ shoutcast_user }}/transcoder"
+
+if [ "$(id -u)" != "0" ]; then
+        do_start()
+        {
+                cd $SC_SERV; ./sc_serv daemon ./sc_serv.conf 2> /dev/null 1> /dev/null &
+                cd $SC_TRANS; ./sc_trans ./sc_trans.conf 2> /dev/null 1> /dev/null &
+        }
+else
+        do_start()
+        {
+                su $USER -c "cd $SC_SERV; ./sc_serv daemon ./sc_serv.conf 2> /dev/null 1> /dev/null &"
+                su $USER -c "cd $SC_TRANS; ./sc_trans ./sc_trans.conf 2> /dev/null 1> /dev/null &"
+        }
+fi
+
+do_stop()
+{
+	killall -9 sc_serv
+	killall -9 sc_trans
+}
+
+
+case "$1" in
+start)
+        echo "Iniciando o Shoutcast..."
+        do_start
+;;
+stop)
+        echo "Parando o Shoutcast..."
+        do_stop
+;;
+restart)
+        echo "Re-iniciando o Shoutcast..."
+        do_stop
+        do_start
+;;
+*)
+        echo $"Uso: $0 {start|stop|restart}"
+esac

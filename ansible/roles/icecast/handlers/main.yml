@@ -1,0 +1,6 @@
+---
+- name: restart shoutcast
+  service:
+    name: shoutcast
+    state: restarted
+    enabled: yes

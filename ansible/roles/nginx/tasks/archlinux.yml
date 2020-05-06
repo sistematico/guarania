@@ -1,0 +1,5 @@
+---
+- name: create nginx virtual host
+  template:
+    src: nginx.conf-arch.j2
+    dest: /etc/nginx/nginx.conf

@@ -1,0 +1,43 @@
+---
+- include: debian.yml
+  when: ansible_distribution == "Debian"
+- include: archlinux.yml
+  when: ansible_distribution == "Arch Linux"
+- include: centos.yml
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: get webserver username
+  shell: >
+    awk '/user/{ gsub(";",""); print $2; exit; }' /etc/nginx/nginx.conf
+  changed_when: false
+  register: www_user
+
+- name: get user home directory
+  shell: >
+    getent passwd "{{ www_user }}" | awk -F: '{ print $6 }'
+  changed_when: false
+  register: www_home
+
+# - name: debug home var
+#   debug:
+#     var: www_home
+
+# - name: copy info.php to webserver path
+#   copy:
+#     src: info.php
+#     dest: "{{ www_home }}"
+
+- name: copy info.php to webserver path
+  copy:
+    src: info.php
+    dest: /var/www/{{domain_name}}
+
+- name: restart service nginx
+  systemd:
+    name: nginx
+    state: restarted
+
+- name: restart service php
+  systemd:
+    name: php{{ php_version.stdout }}-fpm
+    state: restarted

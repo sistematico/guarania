@@ -1,0 +1,16 @@
+---
+- include: debian.yml
+  when: ansible_distribution == "Debian"
+  
+- name: install dependencies
+  package:
+    name: "{{item}}"
+    state: latest
+    update_cache: yes
+  with_items: ["git","curl","python-apt"]
+
+- name: download ix
+  get_url:
+    url: http://ix.io/client
+    dest: /usr/local/bin/
+    mode: 0755

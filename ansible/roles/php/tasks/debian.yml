@@ -1,0 +1,68 @@
+---
+- name: install php-fpm
+  package:
+    name: ['php','php-fpm','php-common','php-cli','php-curl','php-sqlite3']
+    state: latest
+
+- shell: >
+    php -v | awk 'NR<=1{ print substr($2,1,3) }'
+  register: php_version
+
+- name: change owner of php dirs
+  file:
+    path: "{{ item }}"
+    owner: "{{ webserver_user }}"
+    group: "{{ webserver_user }}"
+    recurse: true
+  with_items: ["/var/lib/php","/run/php","/var/run/php"]
+
+- name: configure php.ini
+  blockinfile:
+    dest: /etc/php/{{ php_version.stdout }}/fpm/php.ini
+    block: |
+      date.time = America/Sao_Paulo
+      cgi-fix_pathinfo = 0
+    backup: yes
+
+- name: change php max_execution_time in php.ini (cli)
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/cli/php.ini
+    regexp: '^max_execution_time ='
+    line: 'max_execution_time = 300'
+
+- name: change php max_execution_time in php.ini (fpm)
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/php.ini
+    regexp: '^max_execution_time ='
+    line: 'max_execution_time = 300'
+
+- name: change request_terminate_timeout time in www.conf
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf
+    regexp: '^;request_terminate_timeout ='
+    line: 'request_terminate_timeout = 300'
+
+- name: change php-fpm user
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf
+    regexp: '^user = '
+    line: 'user = {{ webserver_user }}'
+
+- name: change php-fpm group
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf
+    regexp: '^group = '
+    line: 'group = {{ webserver_user }}'
+
+- name: change php-fpm listen.owner
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf
+    regexp: '^listen.owner = '
+    line: 'listen.owner = {{ webserver_user }}'
+
+- name: change php-fpm listen.group
+  lineinfile:
+    path: /etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf
+    regexp: '^listen.group = '
+    line: 'listen.group = {{ webserver_user }}'
+  notify: restart php-fpm
